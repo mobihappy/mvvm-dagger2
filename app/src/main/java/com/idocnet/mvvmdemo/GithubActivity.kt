@@ -14,9 +14,11 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
+import com.idocnet.mvvmdemo.api.Resource
 import com.idocnet.mvvmdemo.api.response.Repo
 import com.idocnet.mvvmdemo.app.MyApplication
 import com.idocnet.mvvmdemo.databinding.ActivityGithubBinding
+import com.idocnet.mvvmdemo.db.RepoDao
 import com.idocnet.mvvmdemo.db.User
 import com.idocnet.mvvmdemo.ui.search.RepoAdapter
 import com.idocnet.mvvmdemo.ui.search.SearchViewModel
@@ -27,6 +29,8 @@ import javax.inject.Inject
 class GithubActivity : AppCompatActivity() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
+    @Inject
+    lateinit var repoDao: RepoDao
 
     private lateinit var searchViewModel: SearchViewModel
 
@@ -68,18 +72,28 @@ class GithubActivity : AppCompatActivity() {
             }
         })
 
-        searchViewModel.repos.observe(this, Observer<ArrayList<Repo>> { repos ->
-            this.repos.addAll(repos)
-            val r: ArrayList<Repo> = ArrayList()
-            r.addAll(this.repos)
-            Log.d("SEARCHMODELLOG", "${this.repos.size}")
-            adapter.submitList(r)
-            val json = Gson().toJson(repos)
-            println(json)
-            isLoading = false
+        loadRepos(page)
+
+        searchViewModel.repos.observe(this, Observer{ result ->
+            Log.d("REPOCOUNLOG", "${result?.data?.size}")
+            adapter.submitList(result.data)
         })
 
-        loadRepos(page)
+//        searchViewModel.repos.observe(this, Observer<List<Repo>> { repos ->
+//            this.repos.addAll(repos)
+//            val r: ArrayList<Repo> = ArrayList()
+//            r.addAll(this.repos)
+//            Log.d("SEARCHMODELLOG", "${this.repos.size}")
+//            adapter.submitList(r)
+//            val json = Gson().toJson(repos)
+//            println(json)
+//            isLoading = false
+//        })
+//
+//        repoDao.getRepos().observe(this, Observer <List<Repo>>{
+//            adapter.submitList(it)
+//        })
+
 
         val user = User("1", "Hoang Tung")
         binding.user = user
@@ -111,7 +125,6 @@ class GithubActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        searchViewModel.disposable()
         super.onDestroy()
     }
 
